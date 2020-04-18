@@ -1,12 +1,11 @@
 var fs = require('fs');
 var path = require('path');
 
-class MakeDirWebpackPlugin 
-{
+class MakeDirWebpackPlugin {
   constructor(options) {
-    if(!options || !options.dirs)
+    if (!options || !options.dirs)
       throw new Error('options and options.dirs must be specified');
-    
+
     this.dirs = options.dirs;
   }
 
@@ -23,12 +22,19 @@ class MakeDirWebpackPlugin
   }
 
   apply(compiler) {
-    compiler.plugin('done', () => {
+    const doneHook = () => {
       this.dirs.forEach((dirSpec) => {
         this.makeDir(dirSpec.path);
       });
-    });
-  };
+    };
+    // https://github.com/gdborton/webpack-parallel-uglify-plugin/issues/58#issuecomment-499537639
+    // avoid compiler hook warning
+    if (compiler.hooks) {
+      compiler.hooks.done.tap('MakeDirWebpackPlugin', doneHook);
+    } else {
+      compiler.plugin('done', doneHook);
+    }
+  }
 }
 
 module.exports = MakeDirWebpackPlugin;
